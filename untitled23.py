@@ -60,8 +60,8 @@ common_file_path = "./data/공통.csv"
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
     if context_length and context_length > 50000:
-        return CharacterTextSplitter(chunk_size=250, chunk_overlap=25)
-    return CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        return CharacterTextSplitter(chunk_size=200, chunk_overlap=50)
+    return CharacterTextSplitter(chunk_size=250, chunk_overlap=50)
 
 # 벡터 스토어 생성
 def create_vector_store(files, embeddings, source_type):
@@ -122,20 +122,23 @@ if st.button("검색"):
             text_splitter = create_text_splitter(len(combined_context.split()))
             split_contexts = text_splitter.split_text(combined_context)
 
+            # 최대 요청할 청크 제한 (예: 최대 3개 청크만 사용)
+            split_contexts = split_contexts[:3]
+
             prompt_template = """다음 문서를 참고하여 질문에 답변하세요:
             {context}
             질문: {question}
             답변:"""
 
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
-            llm = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=300)
+            llm = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=200)
 
             final_response = ""
             for chunk in split_contexts:
                 chain = LLMChain(llm=llm, prompt=prompt)
                 response = chain.run({"context": chunk, "question": query})
                 final_response += response + "\n"
-                time.sleep(1)
+                time.sleep(2)
 
             st.subheader("답변")
             st.write(final_response)

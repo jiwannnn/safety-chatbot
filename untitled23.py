@@ -121,7 +121,6 @@ def create_vector_store(files, embeddings, source_type):
             except Exception as e:
                 st.error(f"파일 로드 실패: {file_path}\n{str(e)}")
 
-    st.info(f"총 문서 수: {len(all_documents)}")
     return FAISS.from_documents(all_documents, embeddings)
 
 # 벡터 스토어 초기화

@@ -9,7 +9,56 @@ Original file is located at
 # Streamlit 페이지 설정 (항상 최상단에 위치해야 합니다)
 import streamlit as st
 
-st.set_page_config(page_title="중대재해 사례 질의응답", page_icon="🤖")
+st.set_page_config(page_title="업종별 중대재해 사례 및 안전보건관리체계 질의응답", page_icon="🤖")
+
+# 사용자 지정 CSS 추가
+st.markdown(
+    """
+    <style>
+    /* 전체 배경 색 */
+    body {
+        background-color: #f4f4f4;
+    }
+
+    /* 채팅 UI 스타일 */
+    .chat-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 10px;
+    }
+    .user-message {
+        text-align: right;
+        background-color: #e6f7ff;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-family: Arial, sans-serif;
+    }
+    .ai-message {
+        text-align: left;
+        background-color: #f9f9f9;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-family: Arial, sans-serif;
+    }
+
+    /* 상단 "by 김지완" 스타일 */
+    .top-right {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        font-size: 14px;
+        color: #555;
+        font-family: Arial, sans-serif;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# 상단 "by 김지완" 표시
+st.markdown('<div class="top-right">by 김지완</div>', unsafe_allow_html=True)
 
 # 필요한 라이브러리 임포트
 import os
@@ -85,7 +134,14 @@ except Exception as e:
     st.stop()
 
 # Streamlit 앱 제목
-st.title("중대재해 사례 및 안전보건관리체계 질의응답 시스템")
+st.markdown(
+    """
+    <h1 style="text-align: center; color: black;">
+        업종별 중대재해 사례 및 안전보건관리체계 질의응답
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
 
 # 업종 선택
 selected_industry = st.selectbox("업종을 선택하세요", list(industry_files.keys()))

@@ -82,7 +82,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import CharacterTextSplitter
 
 # OpenAI API 키 설정
-os.environ["OPENAI_API_KEY"] = "your_openai_api_key"
+os.environ["OPENAI_API_KEY"] = "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"
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="중대재해 사례 질의응답", page_icon="🤖")

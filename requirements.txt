@@ -1,6 +1,6 @@
 langchain==0.0.145
 openai
 streamlit
-chromadb
+faiss-cpu
 pandas
 duckdb

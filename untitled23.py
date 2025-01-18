@@ -19,7 +19,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 
 # OpenAI API 키 설정
-os.environ["OPENAI_API_KEY"] = "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"  # 여기에 본인의 OpenAI API 키를 입력
+os.environ["OPENAI_API_KEY"] = "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"  # 여기에 본인의 OpenAI API 키를 입력
 
 # 업종별 파일 설정
 industry_files = {

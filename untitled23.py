@@ -49,6 +49,10 @@ def create_vector_store(files, embeddings, source_type):
 
         for file_path in file_paths:
             try:
+                if not os.path.exists(file_path):
+                    st.warning(f"파일이 존재하지 않습니다: {file_path}")
+                    continue
+                
                 # 텍스트 로더를 사용하여 문서 로드
                 loader = TextLoader(file_path, encoding="utf-8")
                 documents = loader.load()
@@ -64,37 +68,20 @@ def create_vector_store(files, embeddings, source_type):
             except Exception as e:
                 st.error(f"파일 로드 실패: {file_path}\n{str(e)}")
 
+    st.info(f"총 문서 수: {len(all_documents)}")
     return Chroma.from_documents(all_documents, embeddings)
 
-# 업종별 데이터와 공통 데이터 각각의 벡터 스토어 생성
+# 벡터 스토어 초기화 (업종별 및 공통 사례)
 embeddings = OpenAIEmbeddings()
-industry_vector_store = create_vector_store(industry_files, embeddings, "industry")
-common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common")
-
-import os
-import time
-import streamlit as st
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.chat_models import ChatOpenAI
-from langchain.text_splitter import CharacterTextSplitter
-
-# OpenAI API 키 설정
-os.environ["OPENAI_API_KEY"] = "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"
+try:
+    industry_vector_store = create_vector_store(industry_files, embeddings, "industry")
+    common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common")
+except Exception as e:
+    st.error(f"벡터 스토어 생성 중 오류 발생: {str(e)}")
+    st.stop()
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="중대재해 사례 질의응답", page_icon="🤖")
-
-# 텍스트 분할 설정
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-
-# 벡터 스토어 초기화 (업종별 및 공통 사례)
-industry_vector_store = create_vector_store(industry_files, embeddings, "industry")
-common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common")
-
-# Streamlit 앱 제목
 st.title("중대재해 사례 및 안전보건관리체계 질의응답 시스템")
 
 # 업종 선택
@@ -112,9 +99,6 @@ if st.button("검색"):
             # 업종 데이터 검색
             industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 3})
             industry_results = industry_retriever.get_relevant_documents(query)
-
-            # 대기 시간 추가 (API 요청 간 속도 제한 방지)
-            time.sleep(2)
 
             # 공통 데이터 검색
             common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 3})
@@ -148,9 +132,7 @@ if st.button("검색"):
                 chain = LLMChain(llm=llm, prompt=prompt)
                 response = chain.run({"context": chunk, "question": query})
                 final_response += response + "\n"
-
-                # 대기 시간 추가 (속도 제한 방지)
-                time.sleep(2)
+                time.sleep(2)  # 속도 제한 방지
 
             # 결과 출력
             st.subheader("답변")

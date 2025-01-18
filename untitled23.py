@@ -57,11 +57,21 @@ industry_files = {
 
 common_file_path = "./data/공통.csv"
 
+# 텍스트 요약 함수
+def summarize_context(llm, context):
+    prompt = PromptTemplate(
+        input_variables=["context"],
+        template="다음 문서를 간결하고 핵심적인 내용으로 요약하세요:\n\n{context}\n\n요약:"
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    summary = chain.run({"context": context})
+    return summary
+
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
     if context_length and context_length > 20000:
-        return CharacterTextSplitter(chunk_size=150, chunk_overlap=20)
-    return CharacterTextSplitter(chunk_size=200, chunk_overlap=30)
+        return CharacterTextSplitter(chunk_size=100, chunk_overlap=10)  # 더 작은 청크
+    return CharacterTextSplitter(chunk_size=150, chunk_overlap=20)
 
 # 벡터 스토어 생성
 def create_vector_store(files, embeddings, source_type):
@@ -110,21 +120,21 @@ if st.button("검색"):
         st.warning("질문을 입력하세요.")
     else:
         try:
-            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 1})
+            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 2})  # 검색 결과 수를 제한
             industry_results = industry_retriever.get_relevant_documents(query)
 
-            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 1})
+            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 2})  # 검색 결과 수를 제한
             common_results = common_retriever.get_relevant_documents(query)
 
+            # 검색 결과 결합
             all_results = industry_results + common_results
             combined_context = "\n".join([doc.page_content for doc in all_results])
 
-            text_splitter = create_text_splitter(len(combined_context.split()))
-            split_contexts = text_splitter.split_text(combined_context)
+            # 검색 결과 요약
+            llm_summary = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=300)  # 요약용 모델
+            summarized_context = summarize_context(llm_summary, combined_context)
 
-            # 최대 요청할 청크 제한 (예: 최대 3개 청크만 사용)
-            split_contexts = split_contexts[:2]
-
+            # 최종 프롬프트 설정 및 답변 생성
             prompt_template = """다음 문서를 참고하여 질문에 답변하세요:
             {context}
             질문: {question}
@@ -133,14 +143,11 @@ if st.button("검색"):
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
             llm = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=150)
 
-            final_response = ""
-            for chunk in split_contexts:
-                chain = LLMChain(llm=llm, prompt=prompt)
-                response = chain.run({"context": chunk, "question": query})
-                final_response += response + "\n"
-                time.sleep(2)
+            chain = LLMChain(llm=llm, prompt=prompt)
+            final_response = chain.run({"context": summarized_context, "question": query})
 
             st.subheader("답변")
             st.write(final_response)
+
         except Exception as e:
             st.error(f"오류 발생: {str(e)}")

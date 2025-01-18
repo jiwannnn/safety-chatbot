@@ -23,16 +23,16 @@ os.environ["OPENAI_API_KEY"] = "sk-proj-cMlc1_fuDiI11LUPUEYd3yWtYadDdPJkbSkAodM-
 
 # 업종별 파일 설정
 industry_files = {
-    "강선_건조업_안전보건": ["C:/Users/kjhpl/Downloads/강선 건조업 안전보건관리체계 구축 가이드.md", "C:/Users/kjhpl/Downloads/선박건조 및 수리업.csv"],
-    "벌목업_안전보건": ["C:/Users/kjhpl/Downloads/벌목업 안전보건관리체계 구축 가이드.md", "C:/Users/kjhpl/Downloads/임업.csv"],
-    "섬유_및_섬유제품_제조업(표백_및_염색가공업)": ["C:/Users/kjhpl/Downloads/섬유제품 염색, 정리 및 마무리 가공업 안전보건관리체계 구축 가이드.md", "C:/Users/kjhpl/Downloads/섬유 및 섬유제품제조업.csv"],
-    "인쇄업_안전보건": ["C:/Users/kjhpl/Downloads/인쇄업 안전보건관리체계 구축 가이드.md", "C:/Users/kjhpl/Downloads/출판 인쇄업.csv"],
-    "플라스틱제품_안전보건": ["C:/Users/kjhpl/Downloads/플라스틱 제품 제조업 안전보건관리체계 구축 가이드.md", "C:/Users/kjhpl/Downloads/플라스틱 가공 제품제조업.csv"],
-    "자동차부품_안전보건": ["C:/Users/kjhpl/Downloads/자동차 부품 안전보건관리체계 구축 가이드.md", "C:/Users/kjhpl/Downloads/차량 부품 제조업.csv"],
+    "강선_건조업_안전보건": ["./data/강선 건조업 안전보건관리체계 구축 가이드.md", "./data/선박건조 및 수리업.csv"],
+    "벌목업_안전보건": ["./data/벌목업 안전보건관리체계 구축 가이드.md", "./data/임업.csv"],
+    "섬유_및_섬유제품_제조업(표백_및_염색가공업)": ["./data/섬유제품 염색, 정리 및 마무리 가공업 안전보건관리체계 구축 가이드.md", "./data/섬유 및 섬유제품제조업.csv"],
+    "인쇄업_안전보건": ["./data/인쇄업 안전보건관리체계 구축 가이드.md", "./data/출판 인쇄업.csv"],
+    "플라스틱제품_안전보건": ["./data/플라스틱 제품 제조업 안전보건관리체계 구축 가이드.md", "./data/플라스틱 가공 제품제조업.csv"],
+    "자동차부품_안전보건": ["./data/자동차 부품 안전보건관리체계 구축 가이드.md", "./data/차량 부품 제조업.csv"],
 }
 
 # 공통 사례 파일 경로
-common_file_path = "C:/Users/kjhpl/Downloads/공통.csv"
+common_file_path = "./data/공통.csv"
 
 # 텍스트 분할 설정
 def create_text_splitter():

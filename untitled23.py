@@ -64,12 +64,12 @@ def summarize_context(llm, context):
         template="다음 문서를 간결하고 핵심적인 내용으로 요약하세요:\n\n{context}\n\n요약:"
     )
     chain = LLMChain(llm=llm, prompt=prompt)
-    summary = chain.run({"context": context})
+    summary = chain.run({"context": context[:2000]})  # 요약 시 입력 텍스트 크기를 제한
     return summary
 
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
-    if context_length and context_length > 20000:
+    if context_length and context_length > 10000:
         return CharacterTextSplitter(chunk_size=100, chunk_overlap=10)  # 더 작은 청크
     return CharacterTextSplitter(chunk_size=150, chunk_overlap=20)
 
@@ -120,10 +120,10 @@ if st.button("검색"):
         st.warning("질문을 입력하세요.")
     else:
         try:
-            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 2})  # 검색 결과 수를 제한
+            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 1})  # 검색 결과 수를 제한
             industry_results = industry_retriever.get_relevant_documents(query)
 
-            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 2})  # 검색 결과 수를 제한
+            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 1})  # 검색 결과 수를 제한
             common_results = common_retriever.get_relevant_documents(query)
 
             # 검색 결과 결합
@@ -132,7 +132,7 @@ if st.button("검색"):
 
             # 검색 결과 요약
             llm_summary = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=300)  # 요약용 모델
-            summarized_context = summarize_context(llm_summary, combined_context)
+            summarized_context = summarize_context(llm_summary, combined_context[:5000])  # 요약 시 입력 크기 제한
 
             # 최종 프롬프트 설정 및 답변 생성
             prompt_template = """다음 문서를 참고하여 질문에 답변하세요:

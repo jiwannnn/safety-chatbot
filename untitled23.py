@@ -87,11 +87,18 @@ industry_files = {
 # 공통 사례 파일 경로
 common_file_path = "./data/공통.csv"
 
-# 텍스트 분할 설정
-def create_text_splitter():
-    return CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+# 텍스트 분할 설정 함수 (문서 길이에 따라 조정)
+def get_text_splitter(combined_context):
+    # 전역 변수로 chunk_size와 chunk_overlap을 설정
+    global chunk_size, chunk_overlap
+    if len(combined_context.split()) > 100000:  # 문서 길이가 10만 단어 이상일 경우
+        chunk_size = 750
+        chunk_overlap = 75
+    else:  # 기본값 설정
+        chunk_size = 1000
+        chunk_overlap = 100
 
-text_splitter = create_text_splitter()
+    return CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 # 벡터 스토어 생성 함수
 def create_vector_store(files, embeddings, source_type):

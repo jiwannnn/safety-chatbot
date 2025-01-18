@@ -69,7 +69,13 @@ def create_vector_store(files, embeddings, source_type):
                 st.error(f"파일 로드 실패: {file_path}\n{str(e)}")
 
     st.info(f"총 문서 수: {len(all_documents)}")
-    return Chroma.from_documents(all_documents, embeddings)
+    # DuckDB를 백엔드로 사용하는 Chroma 생성
+    return Chroma.from_documents(
+        documents=all_documents,
+        embedding=embeddings,
+        persist_directory="./vector_store",
+        backend="duckdb"  # SQLite 대신 DuckDB 사용
+    )
 
 # 벡터 스토어 초기화 (업종별 및 공통 사례)
 embeddings = OpenAIEmbeddings()

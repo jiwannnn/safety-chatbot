@@ -70,12 +70,8 @@ def create_vector_store(files, embeddings, source_type):
 
     st.info(f"총 문서 수: {len(all_documents)}")
     # DuckDB를 백엔드로 사용하는 Chroma 생성
-    return Chroma.from_documents(
-        documents=all_documents,
-        embedding=embeddings,
-        persist_directory="./vector_store",
-        backend="duckdb"  # SQLite 대신 DuckDB 사용
-    )
+        # FAISS 벡터 스토어 생성
+    return FAISS.from_documents(all_documents, embeddings)
 
 # 벡터 스토어 초기화 (업종별 및 공통 사례)
 embeddings = OpenAIEmbeddings()

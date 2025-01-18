@@ -87,16 +87,18 @@ industry_files = {
 # 공통 사례 파일 경로
 common_file_path = "./data/공통.csv"
 
-# 텍스트 분할 설정 함수 (문서 길이에 따라 조정)
-def get_text_splitter(combined_context):
-    # 전역 변수로 chunk_size와 chunk_overlap을 설정
+# 텍스트 분할 설정 함수 
+def create_text_splitter(combined_context=None):
     global chunk_size, chunk_overlap
-    if len(combined_context.split()) > 100000:  # 문서 길이가 10만 단어 이상일 경우
-        chunk_size = 750
-        chunk_overlap = 75
-    else:  # 기본값 설정
-        chunk_size = 1000
-        chunk_overlap = 100
+
+    # 기본 값 설정
+    chunk_size = 500  # 분할 크기를 줄임
+    chunk_overlap = 50  # 중복 구간 최소화
+
+    # 만약 문서의 길이가 매우 크다면 추가로 크기 조정
+    if combined_context and len(combined_context.split()) > 50000:  # 50,000 단어 이상일 때
+        chunk_size = 250
+        chunk_overlap = 25
 
     return CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 

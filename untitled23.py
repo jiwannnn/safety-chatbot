@@ -110,10 +110,10 @@ if st.button("검색"):
         st.warning("질문을 입력하세요.")
     else:
         try:
-            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 3})
+            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 1})
             industry_results = industry_retriever.get_relevant_documents(query)
 
-            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 3})
+            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 1})
             common_results = common_retriever.get_relevant_documents(query)
 
             all_results = industry_results + common_results

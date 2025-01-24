@@ -25,7 +25,7 @@ common_file_path = "./data/공통.csv"
 
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
-    chunk_size = 300
+    chunk_size = 200
     chunk_overlap = 50
     return RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, separators=["\n\n", "\n", " ", ""]

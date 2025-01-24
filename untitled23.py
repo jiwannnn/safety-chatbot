@@ -115,7 +115,7 @@ if st.button("검색"):
             combined_context = "\n".join([doc.page_content for doc in all_results])
 
             # 요약 단계
-            llm_summary = ChatOpenAI(model_name="gpt-4-32k", temperature=0, max_tokens=1000)
+            llm_summary = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, max_tokens=1000)
             summarized_context = summarize_context(llm_summary, combined_context)
 
             # 최종 답변 생성
@@ -125,7 +125,7 @@ if st.button("검색"):
             답변:"""
 
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
-            llm = ChatOpenAI(model_name="gpt-4-32k", temperature=0, max_tokens=500)
+            llm = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, max_tokens=500)
 
             chain = LLMChain(llm=llm, prompt=prompt)
 

@@ -52,8 +52,8 @@ common_file_path = "./data/공통.csv"
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
     if context_length and context_length > 32000:
-        return CharacterTextSplitter(chunk_size=300, chunk_overlap=50)  # GPT-4-32k에 맞춤 설정
-    return CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        return CharacterTextSplitter(chunk_size=200, chunk_overlap=50)  # GPT-4-32k에 맞춤 설정
+    return CharacterTextSplitter(chunk_size=150, chunk_overlap=50)
 
 # 벡터 스토어 생성
 def create_vector_store(files, embeddings, source_type):
@@ -119,10 +119,10 @@ if st.button("검색"):
     else:
         try:
             # 검색 수행
-            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 3})
+            industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 1})
             industry_results = industry_retriever.get_relevant_documents(query)
 
-            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 3})
+            common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 1})
             common_results = common_retriever.get_relevant_documents(query)
 
             all_results = industry_results + common_results

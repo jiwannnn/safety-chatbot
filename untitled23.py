@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
-import streamlit as st
 import os
 import time
+import pickle  # 캐싱을 위해 사용
+import streamlit as st
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -10,32 +10,9 @@ from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 
-# Streamlit 페이지 설정
-st.set_page_config(page_title="업종별 중대재해 사례 및 안전보건관리체계 질의응답", page_icon="🤖")
-
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: #f4f4f4;
-    }
-    .bottom-right {
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        font-size: 14px;
-        color: #555;
-        font-family: Arial, sans-serif;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown('<div class="bottom-right">by 김지완</div>', unsafe_allow_html=True)
-
-# OpenAI API 키 설정
-os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+# 캐싱 파일 경로 설정
+INDUSTRY_CACHE_FILE = "./industry_vector_cache.pkl"
+COMMON_CACHE_FILE = "./common_vector_cache.pkl"
 
 # 업종별 파일 설정
 industry_files = {
@@ -51,23 +28,36 @@ common_file_path = "./data/공통.csv"
 
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
-    # 기본 분할 설정
     chunk_size = 200
     chunk_overlap = 50
-
     if context_length and context_length > 32000:
         chunk_size = 150
         chunk_overlap = 50
-
-    # RecursiveCharacterTextSplitter 사용
     return RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        separators=["\n\n", "\n", " ", ""],  # 구분자 순서대로 시도
+        separators=["\n\n", "\n", " ", ""]
     )
 
+# 캐싱 함수
+def save_to_cache(vector_store, cache_file):
+    with open(cache_file, "wb") as f:
+        pickle.dump(vector_store, f)
+
+def load_from_cache(cache_file):
+    if os.path.exists(cache_file):
+        with open(cache_file, "rb") as f:
+            return pickle.load(f)
+    return None
+
 # 벡터 스토어 생성
-def create_vector_store(files, embeddings, source_type):
+def create_vector_store(files, embeddings, source_type, cache_file):
+    # 캐시 확인
+    vector_store = load_from_cache(cache_file)
+    if vector_store:
+        st.info(f"{source_type} 벡터 스토어를 캐시에서 로드했습니다.")
+        return vector_store
+
     all_documents = []
     for name, file_paths in files.items():
         if not isinstance(file_paths, list):
@@ -92,9 +82,26 @@ def create_vector_store(files, embeddings, source_type):
 
     text_splitter = create_text_splitter(len(" ".join([doc.page_content for doc in all_documents]).split()))
     split_texts = text_splitter.split_documents(all_documents)
-    return FAISS.from_documents(split_texts, embeddings)
 
-# 요약 함수 (GPT-4-32k 사용)
+    # 배치 임베딩
+    st.info(f"{len(split_texts)}개의 문서 청크를 임베딩 중...")
+    batch_size = 10
+    all_embeddings = []
+    for i in range(0, len(split_texts), batch_size):
+        batch = split_texts[i:i + batch_size]
+        try:
+            batch_embeddings = embeddings.embed_documents([doc.page_content for doc in batch])
+            all_embeddings.extend(batch_embeddings)
+            time.sleep(1)  # API Rate Limit 방지 대기
+        except Exception as e:
+            st.error(f"임베딩 생성 실패: {str(e)}")
+
+    # 벡터 스토어 생성 및 캐싱
+    vector_store = FAISS(embeddings=all_embeddings, documents=split_texts)
+    save_to_cache(vector_store, cache_file)
+    return vector_store
+
+# 요약 함수
 def summarize_context(llm, context):
     prompt = PromptTemplate(
         input_variables=["context"],
@@ -105,7 +112,7 @@ def summarize_context(llm, context):
         )
     )
     chain = LLMChain(llm=llm, prompt=prompt)
-    max_context_length = 20000  # 안전한 입력 길이 제한
+    max_context_length = 20000
     truncated_context = context[:max_context_length]
     summary = chain.run({"context": truncated_context})
     return summary
@@ -114,9 +121,8 @@ def summarize_context(llm, context):
 embeddings = OpenAIEmbeddings()
 
 try:
-    # 벡터 스토어 생성
-    industry_vector_store = create_vector_store(industry_files, embeddings, "industry")
-    common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common")
+    industry_vector_store = create_vector_store(industry_files, embeddings, "industry", INDUSTRY_CACHE_FILE)
+    common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common", COMMON_CACHE_FILE)
 except Exception as e:
     st.error(f"벡터 스토어 생성 중 오류 발생: {str(e)}")
     st.stop()
@@ -132,7 +138,6 @@ if st.button("검색"):
         st.warning("질문을 입력하세요.")
     else:
         try:
-            # 검색 수행
             industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 1})
             industry_results = industry_retriever.get_relevant_documents(query)
 
@@ -143,7 +148,7 @@ if st.button("검색"):
             combined_context = "\n".join([doc.page_content for doc in all_results])
 
             # 요약 단계
-            llm_summary = ChatOpenAI(model_name="gpt-4-turbo-32k", temperature=0, max_tokens=1000)
+            llm_summary = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=1000)
             summarized_context = summarize_context(llm_summary, combined_context)
 
             # 최종 답변 생성
@@ -153,22 +158,19 @@ if st.button("검색"):
             답변:"""
 
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
-            llm = ChatOpenAI(model_name="gpt-4-32k", temperature=0, max_tokens=500)
+            llm = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=500)
 
             chain = LLMChain(llm=llm, prompt=prompt)
 
-            # **청크 크기를 줄이고 요청 간 딜레이 추가**
             final_response = ""
             for chunk in summarized_context.split("\n"):
-                if chunk.strip():  # 빈 청크 제외
+                if chunk.strip():
                     response = chain.run({"context": chunk, "question": query})
                     final_response += response + "\n"
-                    time.sleep(2)  # 요청 간 2초 대기
+                    time.sleep(1)  # 요청 간 대기
 
-            # 결과 출력
             st.subheader("답변")
             st.write(final_response)
 
         except Exception as e:
             st.error(f"오류 발생: {str(e)}")
-

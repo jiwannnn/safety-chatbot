@@ -26,11 +26,11 @@ common_file_path = "./data/공통.csv"
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
     # 기본 분할 설정
-    chunk_size = 200
-    chunk_overlap = 50
+    chunk_size = 500  # 기존보다 큰 청크 크기
+    chunk_overlap = 100
 
     if context_length and context_length > 32000:
-        chunk_size = 150
+        chunk_size = 300
         chunk_overlap = 50
 
     # RecursiveCharacterTextSplitter 사용
@@ -130,7 +130,7 @@ if st.button("검색"):
             combined_context = "\n".join([doc.page_content for doc in all_results])
 
             # 요약 단계
-            llm_summary = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, max_tokens=1000)
+            llm_summary = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, max_tokens=1500)
             summarized_context = summarize_context(llm_summary, combined_context)
 
             # 최종 답변 생성
@@ -140,7 +140,7 @@ if st.button("검색"):
             답변:"""
 
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
-            llm = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, max_tokens=500)
+            llm = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, max_tokens=1000)
 
             chain = LLMChain(llm=llm, prompt=prompt)
 
@@ -152,9 +152,9 @@ if st.button("검색"):
                     final_response += response + "\n"
                     time.sleep(2)  # 요청 간 2초 대기
 
-            # 결과 출력
-            st.subheader("답변")
-            st.write(final_response)
+            # 결과 출력 (긴 답변 나누기)
+            for i in range(0, len(final_response), 1000):
+                st.write(final_response[i:i+1000])
 
         except Exception as e:
             st.error(f"오류 발생: {str(e)}")

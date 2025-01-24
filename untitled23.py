@@ -110,15 +110,18 @@ def summarize_context(llm, context):
     summary = chain.run({"context": truncated_context})
     return summary
 
+# OpenAI 임베딩 초기화
 embeddings = OpenAIEmbeddings()
 
 try:
+    # 벡터 스토어 생성
     industry_vector_store = create_vector_store(industry_files, embeddings, "industry")
     common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common")
 except Exception as e:
     st.error(f"벡터 스토어 생성 중 오류 발생: {str(e)}")
     st.stop()
 
+# Streamlit UI 구성
 st.markdown("<h1 style='text-align: center;'>업종별 중대재해 사례 및 안전보건관리체계 질의응답</h1>", unsafe_allow_html=True)
 
 selected_industry = st.selectbox("업종을 선택하세요", list(industry_files.keys()))
@@ -153,10 +156,19 @@ if st.button("검색"):
             llm = ChatOpenAI(model_name="gpt-4-32k", temperature=0, max_tokens=500)
 
             chain = LLMChain(llm=llm, prompt=prompt)
-            final_response = chain.run({"context": summarized_context, "question": query})
 
+            # **청크 크기를 줄이고 요청 간 딜레이 추가**
+            final_response = ""
+            for chunk in summarized_context.split("\n"):
+                if chunk.strip():  # 빈 청크 제외
+                    response = chain.run({"context": chunk, "question": query})
+                    final_response += response + "\n"
+                    time.sleep(2)  # 요청 간 2초 대기
+
+            # 결과 출력
             st.subheader("답변")
             st.write(final_response)
 
         except Exception as e:
-             print(f"오류 발생: {e}") 
+            st.error(f"오류 발생: {str(e)}")
+

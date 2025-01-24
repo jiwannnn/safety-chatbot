@@ -148,3 +148,4 @@ if st.button("검색"):
             st.write(final_response)
 
         except Exception as e:
+             print(f"오류 발생: {e}") 

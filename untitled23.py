@@ -25,8 +25,8 @@ common_file_path = "./data/공통.csv"
 
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
-    chunk_size = 500
-    chunk_overlap = 100
+    chunk_size = 300
+    chunk_overlap = 50
     return RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, separators=["\n\n", "\n", " ", ""]
     )
@@ -64,6 +64,7 @@ def create_vector_store(files, embeddings, source_type):
                     doc.metadata["source"] = name
                     doc.metadata["type"] = source_type
             all_documents.extend(documents)
+            time.sleep(2)  # 각 파일 처리 후 딜레이 추가
     text_splitter = create_text_splitter()
     split_texts = text_splitter.split_documents(all_documents)
     return FAISS.from_documents(split_texts, embeddings)
@@ -87,11 +88,13 @@ if st.button("검색"):
         st.warning("질문을 입력하세요.")
     else:
         industry_retriever = industry_vector_store.as_retriever(search_kwargs={"k": 1})
+        time.sleep(2)  # API 호출 전 딜레이 추가
         industry_results = industry_retriever.get_relevant_documents(query)
+        
         common_retriever = common_vector_store.as_retriever(search_kwargs={"k": 1})
+        time.sleep(2)  # API 호출 전 딜레이 추가
         common_results = common_retriever.get_relevant_documents(query)
 
         print(f"Industry results: {len(industry_results)}, Common results: {len(common_results)}")
-
 
 

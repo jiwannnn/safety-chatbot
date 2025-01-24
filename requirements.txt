@@ -1,5 +1,6 @@
 langchain==0.0.145
 openai==0.27.8
+pickle
 streamlit
 faiss-cpu
 pandas

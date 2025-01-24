@@ -143,7 +143,7 @@ if st.button("검색"):
             combined_context = "\n".join([doc.page_content for doc in all_results])
 
             # 요약 단계
-            llm_summary = ChatOpenAI(model_name="gpt-4-32k", temperature=0, max_tokens=1000)
+            llm_summary = ChatOpenAI(model_name="gpt-4-turbo-32k", temperature=0, max_tokens=1000)
             summarized_context = summarize_context(llm_summary, combined_context)
 
             # 최종 답변 생성

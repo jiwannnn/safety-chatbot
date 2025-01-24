@@ -7,7 +7,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import TextLoader
+from langchain.document_loaders import TextLoader, CsvLoader
 
 # 업종별 파일 설정
 industry_files = {
@@ -51,7 +51,12 @@ def create_vector_store(files, embeddings, source_type):
                     st.warning(f"파일이 존재하지 않습니다: {file_path}")
                     continue
 
-                loader = TextLoader(file_path, encoding="utf-8")
+                # 파일 확장자에 따라 로더 선택
+                if file_path.endswith(".csv"):
+                    loader = CsvLoader(file_path)
+                else:
+                    loader = TextLoader(file_path, encoding="utf-8")
+
                 documents = loader.load()
 
                 for doc in documents:
@@ -66,7 +71,7 @@ def create_vector_store(files, embeddings, source_type):
     split_texts = text_splitter.split_documents(all_documents)
     return FAISS.from_documents(split_texts, embeddings)
 
-# 요약 함수 (GPT-4-32k 사용)
+# 요약 함수 (GPT-3.5-turbo-16k 사용)
 def summarize_context(llm, context):
     prompt = PromptTemplate(
         input_variables=["context"],
@@ -143,3 +148,4 @@ if st.button("검색"):
 
         except Exception as e:
             st.error(f"오류 발생: {str(e)}")
+

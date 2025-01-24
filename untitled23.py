@@ -56,7 +56,7 @@ def create_text_splitter(context_length=None):
     chunk_overlap = 50
 
     if context_length and context_length > 32000:
-        chunk_size = 300
+        chunk_size = 150
         chunk_overlap = 50
 
     # RecursiveCharacterTextSplitter 사용

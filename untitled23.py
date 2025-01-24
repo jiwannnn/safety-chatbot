@@ -40,7 +40,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import TextLoader
+from langchain.document_loaders import TextLoader, CSVLoader
 
 # OpenAI API 키 설정
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
@@ -63,7 +63,7 @@ def create_text_splitter(context_length=None):
         return CharacterTextSplitter(chunk_size=150, chunk_overlap=20)
     return CharacterTextSplitter(chunk_size=200, chunk_overlap=30)
 
-# 벡터 스토어 생성
+# 일반 파일 벡터 스토어 생성
 def create_vector_store(files, embeddings, source_type):
     all_documents = []
     for name, file_paths in files.items():
@@ -91,11 +91,25 @@ def create_vector_store(files, embeddings, source_type):
     split_texts = text_splitter.split_documents(all_documents)
     return FAISS.from_documents(split_texts, embeddings)
 
+# CSV 파일 벡터 스토어 생성
+def create_vector_store_from_csv(file_path, embeddings, source_type):
+    try:
+        loader = CSVLoader(file_path=file_path, encoding="utf-8")
+        documents = loader.load()
+
+        for doc in documents:
+            doc.metadata["source"] = source_type
+
+        return FAISS.from_documents(documents, embeddings)
+    except Exception as e:
+        st.error(f"CSV 벡터화 중 오류 발생: {str(e)}")
+        return None
+
 embeddings = OpenAIEmbeddings()
 
 try:
     industry_vector_store = create_vector_store(industry_files, embeddings, "industry")
-    common_vector_store = create_vector_store({"공통 사례": common_file_path}, embeddings, "common")
+    common_vector_store = create_vector_store_from_csv(common_file_path, embeddings, "common")
 except Exception as e:
     st.error(f"벡터 스토어 생성 중 오류 발생: {str(e)}")
     st.stop()
@@ -143,4 +157,4 @@ if st.button("검색"):
             st.subheader("답변")
             st.write(final_response)
         except Exception as e:
-            st.error(f"오류 발생: {str(e)}") 
+            st.error(f"오류 발생: {str(e)}")

@@ -4,7 +4,7 @@ import os
 import time
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
@@ -51,9 +51,20 @@ common_file_path = "./data/공통.csv"
 
 # 텍스트 분할 설정
 def create_text_splitter(context_length=None):
+    # 기본 분할 설정
+    chunk_size = 200
+    chunk_overlap = 50
+
     if context_length and context_length > 32000:
-        return CharacterTextSplitter(chunk_size=200, chunk_overlap=50)  # GPT-4-32k에 맞춤 설정
-    return CharacterTextSplitter(chunk_size=150, chunk_overlap=50)
+        chunk_size = 300
+        chunk_overlap = 50
+
+    # RecursiveCharacterTextSplitter 사용
+    return RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=["\n\n", "\n", " ", ""],  # 구분자 순서대로 시도
+    )
 
 # 벡터 스토어 생성
 def create_vector_store(files, embeddings, source_type):

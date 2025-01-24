@@ -1,5 +1,6 @@
 import os
 import time
+import pandas as pd
 import streamlit as st
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
@@ -7,7 +8,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import TextLoader, CsvLoader
+from langchain.document_loaders import TextLoader
+from langchain.schema import Document
 
 # 업종별 파일 설정
 industry_files = {
@@ -38,6 +40,16 @@ def create_text_splitter(context_length=None):
         separators=["\n\n", "\n", " ", ""],  # 구분자 순서대로 시도
     )
 
+# CSV 파일 로드 함수
+def load_csv_as_documents(file_path, metadata=None):
+    df = pd.read_csv(file_path)
+    documents = []
+    for _, row in df.iterrows():
+        content = "\n".join([f"{col}: {row[col]}" for col in df.columns])
+        doc_metadata = metadata or {}
+        documents.append(Document(page_content=content, metadata=doc_metadata))
+    return documents
+
 # 벡터 스토어 생성
 def create_vector_store(files, embeddings, source_type):
     all_documents = []
@@ -53,15 +65,13 @@ def create_vector_store(files, embeddings, source_type):
 
                 # 파일 확장자에 따라 로더 선택
                 if file_path.endswith(".csv"):
-                    loader = CsvLoader(file_path)
+                    documents = load_csv_as_documents(file_path, metadata={"source": name, "type": source_type})
                 else:
                     loader = TextLoader(file_path, encoding="utf-8")
-
-                documents = loader.load()
-
-                for doc in documents:
-                    doc.metadata["source"] = name
-                    doc.metadata["type"] = source_type
+                    documents = loader.load()
+                    for doc in documents:
+                        doc.metadata["source"] = name
+                        doc.metadata["type"] = source_type
 
                 all_documents.extend(documents)
             except Exception as e:
@@ -148,4 +158,5 @@ if st.button("검색"):
 
         except Exception as e:
             st.error(f"오류 발생: {str(e)}")
+
 

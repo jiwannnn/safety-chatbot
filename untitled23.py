@@ -145,7 +145,7 @@ if st.button("검색"):
             답변:"""
 
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
-            llm = ChatOpenAI(model_name="gpt-4", temperature=0, max_tokens=150)
+            llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, max_tokens=150)
 
             final_response = ""
             for chunk in split_contexts:
